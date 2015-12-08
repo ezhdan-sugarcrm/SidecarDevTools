@@ -628,11 +628,34 @@
         Debug.prototype.AppStream = new ActivityStream();
 
         /**
+         * Output stack trace.
+         */
+        function stackTrace() {
+            Error.stackTraceLimit = 0; // disables stack trace
+            Error.stackTraceLimit = Infinity; // disables any limit
+
+            var err = new Error;
+
+            Error.prepareStackTrace = function (err, stack) {
+                return stack;
+            };
+
+            Error.captureStackTrace(err, stackTrace);
+
+            err.stack.forEach(function(frame) {
+                console.error(' call: %s:%d - %s', frame.getFileName(), frame.getLineNumber(), frame.getFunctionName());
+            });
+        }
+
+        /**
          * Override error.handleRenderError method to provide more information on render error.
          */
         var _handleRenderError = Sidecar.error.handleRenderError;
 
         Debug.prototype._handleRenderError = function(component, method, additionalInfo) {
+            if (window.sessionStorage['_sidecar_debug_stacktrace'] === 'enabled') {
+                stackTrace();
+            }
             console.log('=== handleRenderError Information ===');
             console.log('Component: ' + component.name);
             console.log('== ComponentInfo ==', component);
